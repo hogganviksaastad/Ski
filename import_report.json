@@ -1,0 +1,34 @@
+{
+  "build": "jonas-master-ski-sheet-final-v2",
+  "rows_total": 165,
+  "rows_from_updated_workbook": 165,
+  "excel_used_for": [
+    "skis",
+    "ratings",
+    "comments",
+    "bestFor",
+    "technical geometry"
+  ],
+  "technical_data_source": "Jonas_master_ski_sheet_FINAL_V2.xlsx",
+  "visible_run_width_deleted": true,
+  "top3_structured_comments": true,
+  "winner_ability_chart": "fancy donut",
+  "turn_shape_radius_first": {
+    "Short": "< 15 m",
+    "Short-Medium": "15 - 16 m",
+    "Medium": "around 16 m",
+    "Medium-Long": "> 16 m",
+    "Variable": "skis that can be manipulated into other turn shapes than their given radius"
+  },
+  "exact_model_length_link_matches": 31,
+  "model_level_link_matches": 113,
+  "search_link_fallbacks": 21,
+  "weight_sliders": true,
+  "weight_presets": [
+    "tuned",
+    "balanced",
+    "carving",
+    "allround",
+    "playful"
+  ]
+}
