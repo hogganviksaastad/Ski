@@ -1,7 +1,7 @@
 {
   "name": "Ski Selector Pro",
   "short_name": "Ski Selector",
-  "description": "Ski Selector Pro using Jonas_master_ski_sheet_FINAL_V2.xlsx data",
+  "description": "Ski Selector Pro using SkiEssentials 2027 Ski Test tester scores",
   "display": "standalone",
   "start_url": ".",
   "background_color": "#0a1020",

@@ -1,5 +1,5 @@
-// jonas-master-ski-sheet-final-v2 service worker
-const CACHE_NAME = "ski-selector-jonas-master-ski-sheet-final-v2";
+// skiessentials-2027 service worker
+const CACHE_NAME = "ski-selector-skiessentials-2027";
 const CORE = [
   "./",
   "./index.html",

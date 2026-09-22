@@ -1,34 +1,35 @@
 {
-  "build": "jonas-master-ski-sheet-final-v2",
-  "rows_total": 165,
-  "rows_from_updated_workbook": 165,
-  "excel_used_for": [
-    "skis",
-    "ratings",
-    "comments",
-    "bestFor",
-    "technical geometry"
-  ],
-  "technical_data_source": "Jonas_master_ski_sheet_FINAL_V2.xlsx",
-  "visible_run_width_deleted": true,
-  "top3_structured_comments": true,
-  "winner_ability_chart": "fancy donut",
-  "turn_shape_radius_first": {
-    "Short": "< 15 m",
-    "Short-Medium": "15 - 16 m",
-    "Medium": "around 16 m",
-    "Medium-Long": "> 16 m",
-    "Variable": "skis that can be manipulated into other turn shapes than their given radius"
+  "build": "skiessentials-2027",
+  "source": "SkiEssentials 2027 Ski Test (skiessentials.com), Men's Frontside and Men's All-Mountain categories",
+  "rows_total": 207,
+  "skis_source_pages_fetched": 214,
+  "skis_excluded": 7,
+  "excluded_reasons": {
+    "no_tester_score_cards_on_page": 6,
+    "site_page_missing_valid_sidecut_spec": 1
   },
-  "exact_model_length_link_matches": 31,
-  "model_level_link_matches": 113,
-  "search_link_fallbacks": 21,
+  "tester_cards_total": 1528,
+  "tester_cards_avg_per_ski": 7.4,
+  "category_counts": {
+    "race": 13,
+    "narrowfs": 16,
+    "frontside": 47,
+    "allmt": 131
+  },
+  "skis_with_fewer_than_3_tester_cards": 12,
+  "skis_with_unknown_radius_multi_radius_design": 14,
+  "measured_fields": [
+    "tip", "mid", "tail", "radius (when the site lists a single value)", "lengths",
+    "base (avg overall)", "edgeHold (avg edgeGrip)", "stabilitySpeed (avg stability)",
+    "quickness (avg quickness)", "forgiveness (avg forgiveness)", "versatility (avg versatility)"
+  ],
+  "interpreted_fields_rule_based": [
+    "carvingPrecision", "smoothness", "accessibility", "variableBias",
+    "forms (5 turn shapes)", "snows (8 conditions)", "style1/style2", "skills (5 ability levels)",
+    "category", "bias", "bestFor", "comments"
+  ],
+  "interpretation_method": "Every interpreted field is a fixed formula built from the measured tester-score averages and the site's own stated specs/tags (terrain, ability level, mid width, radius) - never a per-ski free-form guess. A small set of keyword checks (carving/precision language, smooth-damp vs chatter-harsh language) adjusts carvingPrecision and smoothness by +/-0.3, based only on short local review fragments that are never copied into this app. Full formulas are documented per-ski in local/ratings_notes.json (not deployed).",
   "weight_sliders": true,
-  "weight_presets": [
-    "tuned",
-    "balanced",
-    "carving",
-    "allround",
-    "playful"
-  ]
+  "weight_presets": ["tuned", "balanced", "carving", "allround", "playful"],
+  "notes": "The 165-row Jonas_master_ski_sheet_FINAL_V2.xlsx dataset has been fully replaced by this SkiEssentials 2027 Ski Test dataset. The original data is preserved in local/backup-final-v2/ (not deployed to GitHub Pages)."
 }
