@@ -1,5 +1,5 @@
-// skiessentials-2027 service worker
-const CACHE_NAME = "ski-selector-skiessentials-2027";
+// ski-selector-redesign-1 service worker
+const CACHE_NAME = "ski-selector-redesign-1";
 const CORE = [
   "./",
   "./index.html",
