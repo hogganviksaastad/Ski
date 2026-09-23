@@ -1,5 +1,5 @@
-// ski-selector-length-fix-1 service worker
-const CACHE_NAME = "ski-selector-length-fix-1";
+// ski-selector-new-icon-1 service worker
+const CACHE_NAME = "ski-selector-new-icon-1";
 const CORE = [
   "./",
   "./index.html",
