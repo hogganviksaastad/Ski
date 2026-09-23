@@ -136,6 +136,8 @@
     .runner-name a { text-decoration:none; } .runner-name a:hover { text-decoration:underline; }
     .runner-sub { color:var(--text-3); font-size:.82rem; margin-top:2px; }
     .runner-radar { display:flex; justify-content:center; margin-top:var(--s2); }
+    .winner-sizes { color:var(--text-3); font-size:.82rem; margin-top:4px; }
+    .winner-sizes strong { color:var(--text-1); font-weight:800; }
 
     .boot-panel { padding:var(--s4) var(--s5); display:flex; align-items:baseline; gap:var(--s4); flex-wrap:wrap; }
     .boot-flex-num { font-size:1.9rem; font-weight:800; }
@@ -175,6 +177,7 @@
     @media (min-width:760px) { .rank-row .r-cell { display:block; } }
     .rank-row .r-score { font-weight:800; text-align:right; font-size:.95rem; }
     .rank-row .r-actions { display:flex; gap:6px; justify-content:flex-end; align-items:center; }
+    .rank-note { color:var(--text-3); font-size:.78rem; padding:var(--s2) var(--s2) 0; }
     .pin-btn { min-height:34px; padding:0 10px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2);
       color:var(--text-2); font-size:.76rem; font-weight:700; cursor:pointer; white-space:nowrap; }
     .pin-btn.pinned { background:var(--brand-soft); border-color:var(--brand); color:var(--brand); }
@@ -384,6 +387,7 @@
         <p id="contextLine" class="ski-meta" style="display:none"></p>
         <h1 class="ski-name" id="winnerName">-</h1>
         <div class="ski-meta" id="winnerMeta">-</div>
+        <div class="winner-sizes" id="winnerSizes"></div>
         <div id="winnerImgWrap"></div>
         <div class="score-row">
           <div class="score-arc-wrap">
@@ -425,6 +429,7 @@
         </div>
         <div class="rank-col-head"><span>Img</span><span>#</span><span>Ski</span><span>Length</span><span>Radius</span><span>Waist</span><span>Score</span><span>Actions</span></div>
         <div id="rankingBody"></div>
+        <p class="rank-note" id="rankNote" style="display:none;">* Turn radius is the published figure for that ski's spec length, shown above.</p>
         <div class="ranking-footer"><button class="btn" id="showAllBtn" type="button">Show all</button></div>
       </section>
 
@@ -625,6 +630,23 @@ const esc = (s) => String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;'
 // Bug fix (plan step 6): null/undefined radius must render as a dash, never "NaN".
 const fmtOrDash = (n, d=1) => (n === null || n === undefined || Number.isNaN(Number(n))) ? '–' : Number(n).toLocaleString('en-US', { minimumFractionDigits:d, maximumFractionDigits:d });
 
+// Which size of this ski the user would actually buy, given the selected length range.
+// Prefers the spec length (the size the published radius/sidecut belongs to) and only
+// substitutes another available size when the spec length itself is outside the range.
+// This never changes scoring or ranking - it only decides what length to display.
+function sizeInRange(row, state){
+  const spec = Number(row.length);
+  const min = Number(state.lengthMin || 140), max = Number(state.lengthMax || 210);
+  if (spec >= min && spec <= max) return spec;
+  const lens = (Array.isArray(row.lengths) && row.lengths.length ? row.lengths : [spec]).map(Number);
+  const inRange = lens.filter(l => l >= min && l <= max);
+  if (!inRange.length) return spec; // fallback: e.g. a pinned ski now outside the range
+  return inRange.reduce((b, l) => Math.abs(l - spec) < Math.abs(b - spec) ? l : b, inRange[0]);
+}
+
+// Display name using the size the user would actually buy (sizeInRange), not the test length.
+function displaySkiName(it, state){ return `${getBiasKey(it.ski)} (${sizeInRange(it.rowRef || it, state)}cm)`; }
+
 const CUSTOM_KEY = 'ski-selector-custom-rows-v2';
 const WEIGHT_KEY = 'ski-weight-sliders-v3';
 const THEME_KEY = 'ski-theme-v1';
@@ -714,6 +736,7 @@ function renderWinner(state, scored){
   if (!w) {
     gid('winnerName').innerHTML = 'No skis in selected range';
     gid('winnerMeta').textContent = 'Adjust the length sliders to widen the range.';
+    gid('winnerSizes').innerHTML = '';
     gid('winnerImgWrap').innerHTML = '';
     gid('winnerScore').textContent = '-'; gid('winnerDelta').textContent = '';
     renderScoreArc(gid('scoreArc'), 0);
@@ -724,9 +747,16 @@ function renderWinner(state, scored){
     return;
   }
   const row = w.rowRef || {};
-  gid('winnerName').innerHTML = `${ytNameHtml(w.ski + yearTag(row.modelYear), row.youtube)}${infoLink(w.link)}${youtubeLink(row.youtube)}`;
-  gid('winnerMeta').textContent = `${w.length} cm · R ${fmtOrDash(row.radius)} m · ${w.mid} mm underfoot`;
-  gid('winnerImgWrap').innerHTML = imgPlate(row.image, w.ski);
+  const size = sizeInRange(row, state);
+  const specLength = Number(row.length);
+  gid('winnerName').innerHTML = `${ytNameHtml(getBiasKey(w.ski) + yearTag(row.modelYear), row.youtube)}${infoLink(w.link)}${youtubeLink(row.youtube)}`;
+  const radiusPart = size !== specLength ? `R ${fmtOrDash(row.radius)} m (at ${specLength} cm)` : `R ${fmtOrDash(row.radius)} m`;
+  gid('winnerMeta').textContent = `${size} cm · ${radiusPart} · ${w.mid} mm underfoot`;
+  const lens = Array.isArray(row.lengths) ? row.lengths.map(Number).sort((a,b)=>a-b) : [];
+  gid('winnerSizes').innerHTML = lens.length > 1
+    ? `Sizes&nbsp; ${lens.map(l => l === size ? `<strong>${l}</strong>` : l).join(' · ')}`
+    : '';
+  gid('winnerImgWrap').innerHTML = imgPlate(row.image, getBiasKey(w.ski));
   gid('winnerScore').textContent = fmt(w.final);
   const second = scored.ranking && scored.ranking[1];
   gid('winnerDelta').textContent = second ? `+${fmt(w.final - second.final)} over #2` : '';
@@ -740,25 +770,26 @@ function renderWinner(state, scored){
   gid('logicLine').textContent = scored.logic || '';
 }
 
-function renderRunners(scored){
+function renderRunners(scored, state){
   const el = gid('runnerGrid');
   const items = (scored.top3 || []).slice(1, 3);
   if (!items.length) { el.innerHTML = ''; return; }
   const labels = ['#2', '#3'];
   el.innerHTML = items.map((it, idx) => {
     const row = it.rowRef || {};
+    const size = sizeInRange(row, state);
     return `<article class="panel runner-card">
       <div class="runner-rank">${labels[idx]}</div>
-      <div class="runner-name">${ytNameHtml(it.ski + yearTag(row.modelYear), row.youtube)}${infoLink(it.link)}</div>
-      <div class="runner-sub">${fmt(it.final)} · row ${idx===0?'2':'3'}</div>
-      ${imgPlate(row.image, it.ski)}
+      <div class="runner-name">${ytNameHtml(getBiasKey(it.ski) + yearTag(row.modelYear), row.youtube)}${infoLink(it.link)}</div>
+      <div class="runner-sub">${fmt(it.final)} · ${size} cm</div>
+      ${imgPlate(row.image, getBiasKey(it.ski))}
     </article>`;
   }).join('');
 }
 
 function renderBoot(state, scored){
   if (!scored.winner) { gid('bootFlex').textContent='-'; gid('bootDetail').textContent='No top ski available.'; return; }
-  const boot = recommendBoot(state, scored.winner);
+  const boot = recommendBoot(state, { ...scored.winner, ski: displaySkiName(scored.winner, state) });
   gid('bootFlex').textContent = boot.flex;
   gid('bootDetail').innerHTML = `<span class="boot-label">${esc(boot.band.label)}</span> · Range ${boot.range} · Mondo ${boot.mondo} · Approx. shell ${boot.shell} — ${esc(boot.reason)}`;
 }
@@ -769,51 +800,67 @@ function renderStory(state, scored){
   const isDefault = sameState(state, APP.defaults);
   if (isDefault) {
     gid('whyLead').textContent = APP.defaultText.winnerWhy;
-    gid('cmp2name').textContent = two ? two.ski : '-'; gid('cmp2text').textContent = APP.defaultText.compare2;
-    gid('cmp3name').textContent = three ? three.ski : '-'; gid('cmp3text').textContent = APP.defaultText.compare3;
+    gid('cmp2name').textContent = two ? displaySkiName(two, state) : '-'; gid('cmp2text').textContent = APP.defaultText.compare2;
+    gid('cmp3name').textContent = three ? displaySkiName(three, state) : '-'; gid('cmp3text').textContent = APP.defaultText.compare3;
     return;
   }
-  gid('whyLead').textContent = `${one.ski} finishes on top because the model gives it the best total match for the selected slope, snow, style, skill level, and turn shape.`;
-  gid('cmp2name').textContent = two ? two.ski : '-';
+  gid('whyLead').textContent = `${displaySkiName(one, state)} finishes on top because the model gives it the best total match for the selected slope, snow, style, skill level, and turn shape.`;
+  gid('cmp2name').textContent = two ? displaySkiName(two, state) : '-';
   gid('cmp2text').textContent = two ? `Scores ${fmt(two.final)} vs ${fmt(one.final)} for the winner — close, but gives away a little in total balance.` : '';
-  gid('cmp3name').textContent = three ? three.ski : '-';
+  gid('cmp3name').textContent = three ? displaySkiName(three, state) : '-';
   gid('cmp3text').textContent = three ? `Scores ${fmt(three.final)} — strong, but trails the winner in specific match quality here.` : '';
 }
 
-function renderTop3Comments(scored){
+function renderTop3Comments(scored, state){
   const el = gid('top3Comments');
   if (!scored.top3 || !scored.top3.length) { el.innerHTML = '<div class="empty-state">No skis in selected range.</div>'; return; }
   const icons = ['🥇','🥈','🥉'];
-  el.innerHTML = scored.top3.map((it, idx) => `<article class="comment-card"><h4>${icons[idx]} ${esc(it.ski)}</h4>${structuredCommentHtml((it.rowRef&&it.rowRef.comments)||'')}</article>`).join('');
+  el.innerHTML = scored.top3.map((it, idx) => `<article class="comment-card"><h4>${icons[idx]} ${esc(displaySkiName(it, state))}</h4>${structuredCommentHtml((it.rowRef&&it.rowRef.comments)||'')}</article>`).join('');
 }
 
 // ===== Ranking (single list, one render path for desktop row + mobile stacked detail) =====
-function renderRanking(scored){
+function renderRanking(scored, state){
   const q = (gid('rankSearch').value || '').toLowerCase();
-  const rows = (scored.ranking || []).filter(r => (`${r.ski} ${r.length} ${r.final}`).toLowerCase().includes(q));
+  const rows = (scored.ranking || []).filter(r => {
+    const row = r.rowRef || {};
+    const size = sizeInRange(row, state);
+    return (`${r.ski} ${r.length} ${size} ${r.final}`).toLowerCase().includes(q);
+  });
   const shown = rows.slice(0, LIMIT);
   gid('showAllBtn').textContent = LIMIT >= rows.length ? `Showing all ${rows.length}` : `Show all ${rows.length}`;
   gid('showAllBtn').disabled = LIMIT >= rows.length;
   const body = gid('rankingBody');
-  if (!shown.length) { body.innerHTML = '<div class="empty-state">No skis in selected range. <button class="btn small" onclick="widenLength()">Widen length range</button></div>'; return; }
+  const note = gid('rankNote');
+  if (!shown.length) { body.innerHTML = '<div class="empty-state">No skis in selected range. <button class="btn small" onclick="widenLength()">Widen length range</button></div>'; if (note) note.style.display = 'none'; return; }
+  let anySubstituted = false;
   body.innerHTML = shown.map(r => {
     const row = r.rowRef || {};
+    const size = sizeInRange(row, state);
+    const specLength = Number(row.length);
+    const substituted = size !== specLength;
+    if (substituted) anySubstituted = true;
+    const lens = Array.isArray(row.lengths) ? row.lengths.map(Number).sort((a,b)=>a-b) : [];
+    const sizesTitle = lens.length > 1 ? ` title="Available lengths: ${lens.join(' / ')}"` : '';
+    const radiusTitle = substituted ? ` title="Turn radius measured at the ${specLength} cm length"` : '';
+    const radiusText = substituted ? `${fmtOrDash(row.radius)} m*` : `${fmtOrDash(row.radius)} m`;
+    const radiusCompact = substituted ? `${fmtOrDash(row.radius)}m*` : `${fmtOrDash(row.radius)}m`;
+    // pKey identifies the ski at its spec length - unchanged, so pinning/comparison keys stay stable.
     const pKey = r.ski + '|' + r.length;
     const isPinned = pinned.some(p => p.key === pKey);
     const cat = getSkiCategory(row); const catM = CAT_META[cat];
     return `<article class="rank-row">
-      ${rowThumb(row.image, r.ski)}
+      ${rowThumb(row.image, getBiasKey(r.ski))}
       <span class="r-num">${r.rank}</span>
       <span class="r-name">${ytNameHtml(getBiasKey(r.ski) + yearTag(row.modelYear), row.youtube)} ${infoLink(r.link)}</span>
-      <span class="r-cell">${r.length} cm</span>
-      <span class="r-cell">${fmtOrDash(row.radius)} m</span>
+      <span class="r-cell"${sizesTitle}>${size} cm</span>
+      <span class="r-cell"${radiusTitle}>${radiusText}</span>
       <span class="r-cell">${r.mid} mm</span>
       <span class="r-score">${fmt(r.final)}</span>
       <span class="r-actions">
         <button class="pin-btn${isPinned?' pinned':''}" type="button" onclick="togglePin('${esc(r.ski).replace(/'/g,"\\'")}',${r.length})">📌</button>
         <a class="rank-link" href="${esc(r.link)}" target="_blank" rel="noopener">Link</a>
       </span>
-      <div class="r-detail"><span class="cat-chip"><i style="background:var(--dot-${cat==='allmt'?'all':cat==='narrowfs'?'narrow':cat==='race'?'race':'front'})"></i>${catM.label}</span><span>${r.length}cm</span><span>R${fmtOrDash(row.radius)}m</span><span>${r.mid}mm</span></div>
+      <div class="r-detail"><span class="cat-chip"><i style="background:var(--dot-${cat==='allmt'?'all':cat==='narrowfs'?'narrow':cat==='race'?'race':'front'})"></i>${catM.label}</span><span>${size}cm</span><span>R${radiusCompact}</span><span>${r.mid}mm</span></div>
       <button class="breakdown-toggle" type="button" onclick="this.nextElementSibling.classList.toggle('open')">▾ Score breakdown</button>
       <div class="breakdown">
         ${['Base','Form','Snow','Style','Skill','Slope'].map((lbl,i) => {
@@ -823,6 +870,7 @@ function renderRanking(scored){
       </div>
     </article>`;
   }).join('');
+  if (note) note.style.display = anySubstituted ? 'block' : 'none';
 }
 
 function widenLength(){ gid('lengthMin').value = 140; gid('lengthMax').value = 200; updateLengthLabel(); render(); }
@@ -856,15 +904,19 @@ function openCompareDialog(){
   const sc = scoreAll(getState()); const rmap = {}; (sc.ranking||[]).forEach(x=>rmap[x.ski+'|'+x.length]=x);
   pinned.forEach(p => { if (rmap[p.key]) p.ranked = rmap[p.key]; });
   const AXES = ['Base','Form','Snow','Style','Skill','Slope'];
+  const state = getState();
   const cols = pinned.map(p => {
     const r = p.ranked || {}; const bias = rowBiasSafe(p.row);
     const rv = [Number(p.row.base)||0, Number(r.form)||0, Number(r.snowScore)||0, Number(r.styleScore)||0, Number(r.skillScore)||0, Number(r.slopeFit)||0];
     const cat = getSkiCategory(p.row); const catM = CAT_META[cat];
+    const size = sizeInRange(p.row, state);
+    const specLength = Number(p.row.length);
+    const radiusText = size !== specLength ? `R${fmtOrDash(p.row.radius)}m (at ${specLength}cm)` : `R${fmtOrDash(p.row.radius)}m`;
     return `<div class="cmp-col-card">
       <span class="cat-chip"><i style="background:var(--dot-${cat==='allmt'?'all':cat==='narrowfs'?'narrow':cat==='race'?'race':'front'})"></i>${catM.label}</span>
       <h3 style="margin:8px 0 2px;font-size:1rem">${ytNameHtml(getBiasKey(p.row.ski), p.row.youtube)} ${infoLink(p.row.link)}</h3>
-      <div class="ski-meta">${p.row.length} cm · R${fmtOrDash(p.row.radius)}m · ${p.row.mid}mm</div>
-      ${imgPlate(p.row.image, p.row.ski)}
+      <div class="ski-meta">${size} cm · ${radiusText} · ${p.row.mid}mm</div>
+      ${imgPlate(p.row.image, getBiasKey(p.row.ski))}
       <div class="cmp-radar-shared">${buildRadarSVG(rv, AXES, 160)}</div>
       <div class="cmp-spec"><span>Overall</span><strong>${r.final ?? '–'}</strong></div>
       <div class="cmp-spec"><span>Turn</span><strong>${r.form ?? '–'}</strong></div>
@@ -977,11 +1029,11 @@ function render(){
   const state = getState();
   const scored = scoreAll(state);
   renderWinner(state, scored);
-  renderRunners(scored);
+  renderRunners(scored, state);
   renderBoot(state, scored);
   renderStory(state, scored);
-  renderTop3Comments(scored);
-  renderRanking(scored);
+  renderTop3Comments(scored, state);
+  renderRanking(scored, state);
   renderCompareBar();
   syncUrl(state);
 }
