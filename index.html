@@ -149,6 +149,7 @@
     .actions-row { display:flex; gap:var(--s2); flex-wrap:wrap; margin-top:var(--s4); }
     @media (max-width:640px) {
       .actions-row { display:grid; grid-template-columns:1fr 1fr; gap:var(--s2); }
+      .actions-row .btn { padding:0 8px; white-space:nowrap; }
       .actions-row .btn.primary { grid-column:1/-1; order:-1; min-height:48px; }
       .actions-row a.btn:only-of-type { grid-column:1/-1; }
       .radar-wrap { flex:1 1 100%; }
@@ -214,6 +215,24 @@
       font-weight:700; cursor:pointer; padding:6px 0 0; }
     .breakdown { grid-column:1/-1; display:none; padding-top:var(--s2); }
     .breakdown.open { display:grid; gap:4px; }
+    .r-hash { display:none; }
+    .pin-btn { display:inline-flex; align-items:center; justify-content:center; }
+    .pin-btn .b-icon { width:16px; height:16px; }
+    @media (max-width:759px) {
+      .rank-row { grid-template-columns:64px minmax(0,1fr) auto; column-gap:var(--s3); row-gap:0;
+        grid-template-areas:"thumb num score" "thumb name score" "detail detail detail" "toggle toggle actions" "bd bd bd";
+        padding:var(--s3) var(--s1); }
+      .rank-row .r-thumb { grid-area:thumb; width:64px; align-self:center; }
+      .rank-row .r-num { grid-area:num; font-size:.72rem; font-weight:800; color:var(--text-3); line-height:1.2; }
+      .rank-row .r-hash { display:inline; }
+      .rank-row .r-name { grid-area:name; line-height:1.25; }
+      .rank-row .r-score { grid-area:score; align-self:center; font-size:1.15rem; }
+      .rank-row .r-detail { grid-area:detail; margin-top:var(--s2); align-items:center; }
+      .rank-row .breakdown-toggle { grid-area:toggle; align-self:center; padding:var(--s2) 0 0; }
+      .rank-row .r-actions { grid-area:actions; align-self:center; padding-top:var(--s2); }
+      .rank-row .rank-link { display:none; }
+      .rank-row .breakdown { grid-area:bd; }
+    }
     .bd-row { display:grid; grid-template-columns:140px 1fr 34px; gap:var(--s2); align-items:center; font-size:.76rem; color:var(--text-3); }
     .bd-head { grid-column:1/-1; font-size:.7rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--text-2); margin-top:var(--s2); }
     .bd-head:first-child { margin-top:0; }
@@ -846,7 +865,7 @@ function renderWinner(state, scored){
   const row = w.rowRef || {};
   const size = sizeInRange(row, state);
   const specLength = Number(row.length);
-  gid('winnerName').innerHTML = `${ytNameHtml(getBiasKey(w.ski) + yearTag(row.modelYear), row.youtube)}${infoLink(w.link)}${youtubeLink(row.youtube)}`;
+  gid('winnerName').innerHTML = ytNameHtml(getBiasKey(w.ski) + yearTag(row.modelYear), row.youtube);
   const spec = sizeSpec(row, size);
   const radiusPart = spec ? `R ${fmtOrDash(spec.radius)} m` : (size !== specLength ? `R ${fmtOrDash(row.radius)} m (at ${specLength} cm)` : `R ${fmtOrDash(row.radius)} m`);
   const midPart = spec && spec.mid != null ? spec.mid : w.mid;
@@ -953,14 +972,14 @@ function renderRanking(scored, state){
     const cat = getSkiCategory(row); const catM = CAT_META[cat];
     return `<article class="rank-row">
       ${rowThumb(row.image, getBiasKey(r.ski))}
-      <span class="r-num">${r.rank}</span>
+      <span class="r-num"><span class="r-hash">#</span>${r.rank}</span>
       <span class="r-name">${ytNameHtml(getBiasKey(r.ski) + yearTag(row.modelYear), row.youtube)} ${infoLink(r.link)}</span>
       <span class="r-cell"${sizesTitle}>${size} cm</span>
       <span class="r-cell"${radiusTitle}>${radiusText}</span>
       <span class="r-cell">${midVal} mm</span>
       <span class="r-score">${fmt(r.final)}</span>
       <span class="r-actions">
-        <button class="pin-btn${isPinned?' pinned':''}" type="button" onclick="togglePin('${esc(r.ski).replace(/'/g,"\\'")}',${r.length})">📌</button>
+        <button class="pin-btn${isPinned?' pinned':''}" type="button" aria-label="Pin to compare" onclick="togglePin('${esc(r.ski).replace(/'/g,"\\'")}',${r.length})">${ICON_PIN}</button>
         <a class="rank-link" href="${esc(r.link)}" target="_blank" rel="noopener">Link</a>
       </span>
       <div class="r-detail"><span class="cat-chip"><i style="background:var(--dot-${cat==='allmt'?'all':cat==='narrowfs'?'narrow':cat==='race'?'race':'front'})"></i>${catM.label}</span><span>${size}cm</span><span>R${radiusCompact}</span><span>${midVal}mm</span></div>
