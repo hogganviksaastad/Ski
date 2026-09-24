@@ -61,6 +61,7 @@
     .topbar .tb-icon { width:18px; height:18px; flex-shrink:0; }
     /* Desktop looks as before: Snow guide and Reset are text only, theme is icon only */
     #snowGuideBtn .tb-icon, #resetBtn .tb-icon, #themeToggle .tb-label { display:none; }
+    #conditionsBtn { display:none; }
     #themeToggle .i-sun { display:none; }
     :root[data-theme="light"] #themeToggle .i-moon { display:none; }
     :root[data-theme="light"] #themeToggle .i-sun { display:inline-block; }
@@ -70,8 +71,9 @@
       .topbar .icon-btn { flex:1; min-width:0; flex-direction:column; justify-content:center; gap:2px;
         padding:6px 4px; min-height:48px; border:none; background:transparent; border-radius:12px; color:var(--text-2); }
       .topbar .icon-btn:active { background:var(--surface-3); }
-      #snowGuideBtn .tb-icon, #resetBtn .tb-icon, #themeToggle .tb-icon { display:inline-block; width:24px; height:24px; }
-      #snowGuideBtn .tb-label, #resetBtn .tb-label, #themeToggle .tb-label { display:block; font-size:9px; font-weight:700; white-space:nowrap; }
+      #conditionsBtn { display:inline-flex; }
+      #conditionsBtn .tb-icon, #snowGuideBtn .tb-icon, #resetBtn .tb-icon, #themeToggle .tb-icon { display:inline-block; width:24px; height:24px; }
+      #conditionsBtn .tb-label, #snowGuideBtn .tb-label, #resetBtn .tb-label, #themeToggle .tb-label { display:block; font-size:9px; font-weight:700; white-space:nowrap; }
       #themeToggle .i-sun { display:none; }
       :root[data-theme="light"] #themeToggle .i-moon { display:none; }
       :root[data-theme="light"] #themeToggle .i-sun { display:inline-block; }
@@ -327,13 +329,6 @@
     .compare-chip strong { font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .compare-chip button { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:.9rem; }
 
-    /* ===== Mobile bottom bar ===== */
-    #mobileBottomBar { position:fixed; left:0; right:0; bottom:0; z-index:65; display:flex; gap:var(--s2);
-      padding:var(--s2) var(--s3) calc(var(--s2) + var(--safeBottom)); background:var(--surface-2);
-      border-top:1px solid var(--border); }
-    @media (min-width:1080px) { #mobileBottomBar { display:none; } }
-    #mobileBottomBar .btn { flex:1; }
-
     /* ===== Mobile sliding sheet ===== */
     #sheetBackdrop { position:fixed; inset:0; background:transparent; z-index:74; display:none; }
     #sheetBackdrop.open { display:block; }
@@ -356,6 +351,8 @@
   <div class="topbar">
     <span class="brand-name">Ski Selector Pro</span>
     <button class="state-chip" id="stateChip" type="button" aria-label="Open conditions"></button>
+    <button class="icon-btn" id="conditionsBtn" type="button" aria-label="Conditions">
+      <svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><line x1="14" y1="2" x2="14" y2="6"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="22"/></svg><span class="tb-label">Conditions</span></button>
     <button class="icon-btn" id="snowGuideBtn" type="button" aria-label="Snow guide">
       <svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg><span class="tb-label">Snow guide</span></button>
     <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle light/dark">
@@ -510,11 +507,6 @@
 
       <div class="footer-note">Data &amp; tester scores from the SkiEssentials 2027 Ski Test. Images hotlinked from and processed for display only; every ski links back to its source review.</div>
     </div>
-  </div>
-
-  <div id="mobileBottomBar">
-    <button class="btn" id="openSheetBtn" type="button">⌃ Conditions</button>
-    <button class="btn primary" id="compareOpenBtnMobile" type="button" style="display:none">Compare</button>
   </div>
 
   <div id="compareBar"><div class="compare-bar-inner" id="compareBarInner"></div></div>
@@ -777,7 +769,7 @@ function initTheme(){
 function openSheet(){ gid('controlsSheet').classList.add('open'); gid('sheetBackdrop').classList.add('open'); document.body.style.overflow='hidden'; }
 function closeSheet(){ gid('controlsSheet').classList.remove('open'); gid('sheetBackdrop').classList.remove('open'); document.body.style.overflow=''; }
 function initSheet(){
-  gid('openSheetBtn').addEventListener('click', openSheet);
+  gid('conditionsBtn').addEventListener('click', openSheet);
   gid('stateChip').addEventListener('click', openSheet);
   gid('closeSheetBtn').addEventListener('click', closeSheet);
   gid('sheetBackdrop').addEventListener('click', closeSheet);
@@ -1080,9 +1072,9 @@ function togglePin(skiName, length){
 }
 function syncPinButtons(){ document.querySelectorAll('.pin-btn').forEach(b => { /* re-render handles state via full re-render */ }); render(); }
 function renderCompareBar(){
-  const bar = gid('compareBar'); const mobileBtn = gid('compareOpenBtnMobile');
-  if (!pinned.length) { bar.classList.remove('visible'); mobileBtn.style.display='none'; return; }
-  bar.classList.add('visible'); mobileBtn.style.display = pinned.length>=2 ? 'block' : 'none';
+  const bar = gid('compareBar');
+  if (!pinned.length) { bar.classList.remove('visible'); return; }
+  bar.classList.add('visible');
   const chips = [...pinned, ...Array(3-pinned.length).fill(null)].map((p,i) => p
     ? `<div class="compare-chip"><div style="overflow:hidden;min-width:0"><strong>${esc(getBiasKey(p.row.ski))}</strong></div><button type="button" onclick="removePin(${pinned.indexOf(p)})" aria-label="Remove">✕</button></div>`
     : `<div class="compare-chip" style="opacity:.4"><strong style="color:var(--text-3)">Empty slot</strong></div>`).join('');
@@ -1331,7 +1323,6 @@ function initApp(){
   gid('rankSearch').addEventListener('input', render);
   gid('resetBtn').addEventListener('click', resetAll);
   gid('showAllBtn').addEventListener('click', () => { LIMIT = 100000; render(); });
-  gid('compareOpenBtnMobile').addEventListener('click', openCompareDialog);
   gid('closeDialogBtn').addEventListener('click', () => gid('compareDialog').close());
   gid('snowGuideBtn').addEventListener('click', openSnowGuide);
   gid('closeSnowGuideBtn').addEventListener('click', () => gid('snowGuideDialog').close());
