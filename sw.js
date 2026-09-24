@@ -1,5 +1,5 @@
 ﻿// ski-selector-new-icon-1 service worker
-const CACHE_NAME = "ski-selector-rankicons-v2";
+const CACHE_NAME = "ski-selector-nate-v2";
 const CORE = [
   "./",
   "./index.html",
