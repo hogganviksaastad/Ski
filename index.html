@@ -165,6 +165,13 @@
     .runner-sub { color:var(--text-3); font-size:.82rem; margin-top:2px; }
     .runner-radar { display:flex; justify-content:center; margin-top:var(--s2); }
     .winner-sizes { color:var(--text-3); font-size:.82rem; margin-top:4px; }
+    .win-summary { display:grid; gap:6px; margin:var(--s3) 0 var(--s2); font-size:.86rem; color:var(--text-2); }
+    .win-summary .ws-head { font-weight:700; color:var(--text-1); }
+    .win-summary .ws-head .ws-cat { font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand); margin-right:6px; }
+    .win-summary .ws-facts { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; }
+    .win-summary .ws-tester { background:var(--brand-soft); color:var(--text-1); border-radius:999px; padding:3px 10px; font-weight:700; }
+    .win-summary .ws-line b { color:var(--text-3); font-weight:700; margin-right:6px; }
+    .bd-note { grid-column:1/-1; font-size:.74rem; color:var(--text-3); line-height:1.5; margin:4px 0 0; }
     .winner-sizes strong { color:var(--text-1); font-weight:800; }
 
     .boot-panel { padding:var(--s4) var(--s5); display:flex; align-items:baseline; gap:var(--s4); flex-wrap:wrap; }
@@ -465,6 +472,7 @@
         <div class="ski-meta" id="winnerMeta">-</div>
         <div class="winner-sizes" id="winnerSizes"></div>
         <div id="winnerImgWrap"></div>
+        <div class="win-summary" id="winnerSummary"></div>
         <div class="score-row">
           <div class="score-arc-wrap">
             <svg id="scoreArc" width="76" height="76" viewBox="0 0 76 76" role="img" aria-label="Overall score"></svg>
@@ -474,7 +482,6 @@
           <div class="bars-wrap" id="matchBars"></div>
         </div>
         <div class="actions-row" id="winnerActions"></div>
-        <div class="ski-meta" id="logicLine" style="margin-top:var(--s4)"></div>
       </section>
 
       <section class="runner-grid" id="runnerGrid"></section>
@@ -831,7 +838,7 @@ function bdRow(lbl, val){
 }
 
 // Score breakdown: how well the ski fits the user's choices, then the raw SkiEssentials tester averages.
-function breakdownHtml(row, r){
+function breakdownHtml(row, r, logic){
   const fit = [['Turn shape match', r.form],['Snow conditions match', r.snowScore],['Riding style match', r.styleScore],['Skill level match', r.skillScore],['Slope match', r.slopeFit]];
   let html = `<div class="bd-head">How well it fits you</div>` + fit.map(([l,v]) => bdRow(l,v)).join('');
   if (!row._custom && row.testerCount) {
@@ -841,7 +848,41 @@ function breakdownHtml(row, r){
   } else {
     html += `<div class="bd-head">Your ski</div>` + bdRow('Overall score (estimate)', row.base);
   }
+  if (logic) html += `<div class="bd-head">How the score works</div><p class="bd-note">${esc(logic)}</p>`;
   return html;
+}
+
+// Short profile of the winning ski, built only from data on the row; missing fields are left out.
+function winnerSummaryHtml(row){
+  if (!row) return '';
+  const parts = [];
+  const catMeta = CAT_META[getSkiCategory(row)];
+  const head = `${catMeta ? `<span class="ws-cat">${esc(catMeta.label)}</span>` : ''}${row.bestFor ? esc(row.bestFor) : ''}`;
+  if (head) parts.push(`<div class="ws-head">${head}</div>`);
+  const hasTesters = !row._custom && row.testerCount;
+  const facts = [];
+  if (hasTesters && row.base != null && !isNaN(Number(row.base))) {
+    const n = Number(row.testerCount);
+    facts.push(`<span class="ws-tester">Testers ${fmt1(row.base)} / 10 · ${n} ${n === 1 ? 'tester' : 'testers'}</span>`);
+  }
+  const snow = /Ideal snow:\s*(.*?)(?:\s*Skill level:|$)/i.exec(String(row.comments || ''));
+  if (snow && snow[1].trim()) facts.push(`<span>Ideal snow: ${esc(snow[1].trim().replace(/\.$/, ''))}</span>`);
+  if (row.rocker) {
+    const ROCKER_NAMES = { RCR: 'Rocker / camber / rocker', RC: 'Rocker / camber', camber: 'Full camber' };
+    const rk = String(row.rocker);
+    facts.push(`<span>Profile: ${esc(ROCKER_NAMES[rk] || rk.charAt(0).toUpperCase() + rk.slice(1))}</span>`);
+  }
+  if (facts.length) parts.push(`<div class="ws-facts">${facts.join('')}</div>`);
+  if (hasTesters) {
+    const cand = [['Edge grip', row.edgeHold],['Stability', row.stabilitySpeed],['Quickness', row.quickness],['Forgiveness', row.forgiveness],['Versatility', row.versatility],['Playfulness', row.playfulness],['Floatation', row.floatation]]
+      .filter(([, v]) => v != null && v !== '' && !isNaN(Number(v))).map(([l, v]) => [l, Number(v)]);
+    const fmtList = a => a.map(([l, v]) => `${l} ${fmt1(v)}`).join(' · ');
+    const strong = cand.filter(([, v]) => v >= 8).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const weak = cand.filter(([, v]) => v <= 5.5).sort((a, b) => a[1] - b[1]).slice(0, 2);
+    if (strong.length) parts.push(`<div class="ws-line"><b>Strong</b>${fmtList(strong)}</div>`);
+    if (weak.length) parts.push(`<div class="ws-line"><b>Less suited</b>${fmtList(weak)}</div>`);
+  }
+  return parts.join('');
 }
 
 // ===== Winner / main render =====
@@ -859,7 +900,7 @@ function renderWinner(state, scored){
     gid('winnerRadar').innerHTML = '';
     renderBars(gid('matchBars'), null);
     gid('winnerActions').innerHTML = '';
-    gid('logicLine').textContent = scored.logic || '';
+    gid('winnerSummary').innerHTML = '';
     return;
   }
   const row = w.rowRef || {};
@@ -875,6 +916,7 @@ function renderWinner(state, scored){
     ? `Sizes&nbsp; ${lens.map(l => l === size ? `<strong>${l}</strong>` : l).join(' · ')}`
     : '';
   gid('winnerImgWrap').innerHTML = imgPlate(row.image, getBiasKey(w.ski));
+  gid('winnerSummary').innerHTML = winnerSummaryHtml(row);
   gid('winnerScore').textContent = fmt(w.final);
   const second = scored.ranking && scored.ranking[1];
   gid('winnerDelta').textContent = second ? `+${fmt(w.final - second.final)} over #2` : '';
@@ -885,7 +927,6 @@ function renderWinner(state, scored){
     ${row.youtube ? `<a class="btn" href="${esc(row.youtube)}" target="_blank" rel="noopener">${ICON_PLAY}Watch review</a>` : ''}
     <a class="btn" href="${esc(w.link)}" target="_blank" rel="noopener">${ICON_DOC}Read test</a>
     <button class="btn primary" type="button" onclick="togglePin('${esc(w.ski).replace(/'/g,"\\'")}',${w.length})">${ICON_PIN}Pin to compare</button>`;
-  gid('logicLine').textContent = scored.logic || '';
 }
 
 function renderRunners(scored, state){
@@ -985,7 +1026,7 @@ function renderRanking(scored, state){
       <div class="r-detail"><span class="cat-chip"><i style="background:var(--dot-${cat==='allmt'?'all':cat==='narrowfs'?'narrow':cat==='race'?'race':'front'})"></i>${catM.label}</span><span>${size}cm</span><span>R${radiusCompact}</span><span>${midVal}mm</span></div>
       <button class="breakdown-toggle" type="button" onclick="this.nextElementSibling.classList.toggle('open')">▾ Score breakdown</button>
       <div class="breakdown">
-        ${breakdownHtml(row, r)}
+        ${breakdownHtml(row, r, scored.logic)}
       </div>
     </article>`;
   }).join('');
