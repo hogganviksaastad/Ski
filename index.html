@@ -58,6 +58,24 @@
       color:var(--text-1); border-radius:12px; cursor:pointer; font-size:.85rem; font-weight:700; padding:0 12px;
       display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
     .topbar .icon-btn:hover { background:var(--surface-3); }
+    .topbar .tb-icon { width:18px; height:18px; flex-shrink:0; }
+    /* Desktop looks as before: Snow guide and Reset are text only, theme is icon only */
+    #snowGuideBtn .tb-icon, #resetBtn .tb-icon, #themeToggle .tb-label { display:none; }
+    #themeToggle .i-sun { display:none; }
+    :root[data-theme="light"] #themeToggle .i-moon { display:none; }
+    :root[data-theme="light"] #themeToggle .i-sun { display:inline-block; }
+    @media (max-width:640px) {
+      .topbar { padding:6px 10px; gap:2px; }
+      .topbar .brand-name, .topbar .state-chip { display:none; }
+      .topbar .icon-btn { flex:1; min-width:0; flex-direction:column; justify-content:center; gap:2px;
+        padding:6px 4px; min-height:48px; border:none; background:transparent; border-radius:12px; color:var(--text-2); }
+      .topbar .icon-btn:active { background:var(--surface-3); }
+      #snowGuideBtn .tb-icon, #resetBtn .tb-icon, #themeToggle .tb-icon { display:inline-block; width:24px; height:24px; }
+      #snowGuideBtn .tb-label, #resetBtn .tb-label, #themeToggle .tb-label { display:block; font-size:9px; font-weight:700; white-space:nowrap; }
+      #themeToggle .i-sun { display:none; }
+      :root[data-theme="light"] #themeToggle .i-moon { display:none; }
+      :root[data-theme="light"] #themeToggle .i-sun { display:inline-block; }
+    }
 
     /* ===== Layout shell ===== */
     .shell { max-width:1360px; margin:0 auto; padding:var(--s4); display:block; }
@@ -90,7 +108,9 @@
     details.adv .adv-body { padding:var(--s3); }
     .weight-row { display:grid; grid-template-columns:110px 1fr 40px; gap:var(--s2); align-items:center; margin-bottom:var(--s2); font-size:.82rem; }
     .btn { min-height:44px; padding:0 16px; border-radius:var(--r2); border:1px solid var(--border-strong); background:var(--surface-2);
-      color:var(--text-1); font-weight:700; font-size:.88rem; cursor:pointer; }
+      color:var(--text-1); font-weight:700; font-size:.88rem; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; }
+    .btn .b-icon { width:18px; height:18px; flex-shrink:0; }
     .btn:hover { background:var(--surface-3); }
     .btn.primary { background:var(--brand); color:var(--brand-ink); border-color:transparent; }
     .btn.small { min-height:36px; padding:0 12px; font-size:.8rem; }
@@ -127,6 +147,13 @@
     .bar-fill { height:100%; background:var(--brand); border-radius:4px; }
 
     .actions-row { display:flex; gap:var(--s2); flex-wrap:wrap; margin-top:var(--s4); }
+    @media (max-width:640px) {
+      .actions-row { display:grid; grid-template-columns:1fr 1fr; gap:var(--s2); }
+      .actions-row .btn.primary { grid-column:1/-1; order:-1; min-height:48px; }
+      .actions-row a.btn:only-of-type { grid-column:1/-1; }
+      .radar-wrap { flex:1 1 100%; }
+      .radar-wrap .cap { display:none; }
+    }
 
     .runner-grid { display:grid; grid-template-columns:1fr; gap:var(--s3); }
     @media (min-width:640px) { .runner-grid { grid-template-columns:1fr 1fr; } }
@@ -301,9 +328,12 @@
   <div class="topbar">
     <span class="brand-name">Ski Selector Pro</span>
     <button class="state-chip" id="stateChip" type="button" aria-label="Open conditions"></button>
-    <button class="icon-btn" id="snowGuideBtn" type="button">Snow guide</button>
-    <button class="icon-btn" id="themeToggle" type="button">☾</button>
-    <button class="icon-btn" id="resetBtn" type="button">Reset</button>
+    <button class="icon-btn" id="snowGuideBtn" type="button" aria-label="Snow guide">
+      <svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20 4-4 4 4"/></svg><span class="tb-label">Snow guide</span></button>
+    <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle light/dark">
+      <svg class="tb-icon i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="tb-icon i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span class="tb-label">Theme</span></button>
+    <button class="icon-btn" id="resetBtn" type="button" aria-label="Reset">
+      <svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span class="tb-label">Reset</span></button>
   </div>
 
   <div class="shell">
@@ -421,7 +451,7 @@
             <svg id="scoreArc" width="76" height="76" viewBox="0 0 76 76" role="img" aria-label="Overall score"></svg>
             <div><div class="score-num" id="winnerScore">-</div><div class="score-sub" id="winnerDelta"></div></div>
           </div>
-          <div class="radar-wrap"><svg id="winnerRadar" width="120" height="120" viewBox="0 0 140 140" role="img" aria-label="Ability radar"></svg><div class="cap">Edge · Carve · Stab · Quick · Forg · Smooth</div></div>
+          <div class="radar-wrap"><svg id="winnerRadar" width="168" height="168" viewBox="0 0 140 140" role="img" aria-label="Ability radar"></svg><div class="cap">Edge · Carve · Stab · Quick · Forg · Smooth</div></div>
           <div class="bars-wrap" id="matchBars"></div>
         </div>
         <div class="actions-row" id="winnerActions"></div>
@@ -705,8 +735,14 @@ function syncUrl(state){ const u = new URL(window.location.href); Object.entries
 const OLD_SNOW_MAP = { groomed:'Groomed', hard:'Hardpack', icy:'Ice', slush:'Spring snow', variable:'Crud', '15cm soft snow':'Fresh snow on groomed', 'chopped up':'Crud', moguls:'Crud' };
 function restoreUrl(){ const u = new URL(window.location.href), q = Object.fromEntries(u.searchParams.entries()); if (q.snow && OLD_SNOW_MAP[q.snow]) q.snow = OLD_SNOW_MAP[q.snow]; if (APP.slopes.includes(q.slope)) gid('slope').value = q.slope; if (APP.widths.includes(q.width)) gid('width').value = q.width; if (APP.snows.includes(q.snow)) gid('snow').value = q.snow; if (APP.styles.includes(q.style)) gid('style').value = q.style; fillSelect('skill', gid('style').value === 'Hip to the snow' ? APP.skillAss : APP.skills, APP.defaults.skill); if ((gid('style').value === 'Hip to the snow' ? APP.skillAss : APP.skills).includes(q.skill)) gid('skill').value = q.skill; if (APP.turns.includes(q.turn)) gid('turn').value = q.turn; if (APP.mondoList.includes(q.mondo)) gid('mondo').value = q.mondo; if (q.weight) gid('weight').value = q.weight; if (gid('lengthMin') && q.lengthMin) gid('lengthMin').value = q.lengthMin; if (gid('lengthMax') && q.lengthMax) gid('lengthMax').value = q.lengthMax; updateSkillOptions(); }
 
+// ===== Button icons (line SVGs) =====
+const ICON_ATTR = 'class="b-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+const ICON_PLAY = `<svg ${ICON_ATTR}><polygon points="6 4 20 12 6 20 6 4"/></svg>`;
+const ICON_DOC = `<svg ${ICON_ATTR}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+const ICON_PIN = `<svg ${ICON_ATTR}><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>`;
+
 // ===== Theme =====
-function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); gid('themeToggle').textContent = t === 'dark' ? '☾' : '☀'; }
+function applyTheme(t){ document.documentElement.setAttribute('data-theme', t); }
 function initTheme(){
   let saved = null; try { saved = localStorage.getItem(THEME_KEY); } catch(e){}
   if (saved === 'dark' || saved === 'light') { applyTheme(saved); }
@@ -760,7 +796,7 @@ function renderWinnerRadar(svgEl, row, size){
     Number(row.forgiveness ?? row.base ?? 5),
     Number(row.smoothness ?? row.base ?? 5),
   ];
-  svgEl.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svgEl.setAttribute('viewBox', `-14 -14 ${size + 28} ${size + 28}`);
   svgEl.innerHTML = buildRadarSVG(vals, AXES, size).replace(/<svg[^>]*>/,'').replace('</svg>','');
 }
 
@@ -827,9 +863,9 @@ function renderWinner(state, scored){
   renderWinnerRadar(gid('winnerRadar'), row, 140);
   renderBars(gid('matchBars'), w);
   gid('winnerActions').innerHTML = `
-    ${row.youtube ? `<a class="btn" href="${esc(row.youtube)}" target="_blank" rel="noopener">▶ Watch review</a>` : ''}
-    <a class="btn" href="${esc(w.link)}" target="_blank" rel="noopener">ⓘ Read test</a>
-    <button class="btn primary" type="button" onclick="togglePin('${esc(w.ski).replace(/'/g,"\\'")}',${w.length})">📌 Pin to compare</button>`;
+    ${row.youtube ? `<a class="btn" href="${esc(row.youtube)}" target="_blank" rel="noopener">${ICON_PLAY}Watch review</a>` : ''}
+    <a class="btn" href="${esc(w.link)}" target="_blank" rel="noopener">${ICON_DOC}Read test</a>
+    <button class="btn primary" type="button" onclick="togglePin('${esc(w.ski).replace(/'/g,"\\'")}',${w.length})">${ICON_PIN}Pin to compare</button>`;
   gid('logicLine').textContent = scored.logic || '';
 }
 
