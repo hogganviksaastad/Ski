@@ -164,9 +164,9 @@
     .win-summary { display:grid; gap:6px; margin:var(--s3) 0 var(--s2); font-size:.86rem; color:var(--text-2); }
     .win-summary .ws-head { font-weight:700; color:var(--text-1); }
     .win-summary .ws-head .ws-cat { font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--brand); margin-right:6px; }
-    .win-summary .ws-quote { margin:2px 0; padding:2px 0 2px 12px; border-left:3px solid var(--brand); font-style:italic; color:var(--text-1); line-height:1.45; }
-    .win-summary .ws-quote cite { display:block; font-style:normal; font-size:.76rem; color:var(--text-3); margin-top:2px; }
-    .win-summary .ws-quote cite a { color:inherit; }
+    .ws-quote { margin:2px 0; padding:2px 0 2px 12px; border-left:3px solid var(--brand); font-style:italic; color:var(--text-1); line-height:1.45; }
+    .ws-quote cite { display:block; font-style:normal; font-size:.76rem; color:var(--text-3); margin-top:2px; }
+    .ws-quote cite a { color:inherit; }
     .win-summary .ws-facts { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; }
     .win-summary .ws-tester { background:var(--brand-soft); color:var(--text-1); border-radius:999px; padding:3px 10px; font-weight:700; }
     .win-summary .ws-line b { color:var(--text-3); font-weight:700; margin-right:6px; }
@@ -250,16 +250,19 @@
     /* ===== Story / explanation ===== */
     .story-panel { padding:var(--s4) var(--s5); }
     .story-panel p { color:var(--text-2); line-height:1.6; margin:0 0 var(--s3); }
-    .compare-mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--s3); }
-    .compare-mini { background:var(--surface-2); border-radius:var(--r2); padding:var(--s3); }
-    .compare-mini h4 { margin:0 0 4px; font-size:.9rem; }
-    .compare-mini p { margin:0; font-size:.82rem; }
 
     .top3-comments-grid { display:grid; grid-template-columns:1fr; gap:var(--s3); }
     @media (min-width:760px) { .top3-comments-grid { grid-template-columns:repeat(3,1fr); } }
     .comment-card { background:var(--surface-2); border-radius:var(--r2); padding:var(--s3); }
     .comment-card h4 { margin:0 0 6px; font-size:.9rem; }
     .comment-card p { margin:0 0 6px; font-size:.8rem; color:var(--text-2); line-height:1.5; }
+    .comment-card .cc-head { display:flex; justify-content:space-between; align-items:baseline; gap:var(--s2); margin-bottom:6px; }
+    .comment-card .cc-head h4 { margin:0; }
+    .comment-card .cc-score { font-weight:800; color:var(--text-1); white-space:nowrap; }
+    .comment-card .cc-score small { font-weight:700; color:var(--text-3); margin-left:6px; font-size:.75rem; }
+    .comment-card .ws-quote { font-size:.8rem; margin:0 0 8px; }
+    .comment-card p.cc-why, .comment-card p.cc-line { color:var(--text-1); }
+    .comment-card .cc-line b, .comment-card .cc-why b { color:var(--text-3); margin-right:6px; }
 
     /* ===== My Skis (details) ===== */
     .myskis-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--s3); }
@@ -487,15 +490,6 @@
       <section class="panel boot-panel" id="bootSection">
         <div><div class="boot-label">Boot fit</div><div class="boot-flex-num" id="bootFlex">-</div></div>
         <div class="boot-detail" id="bootDetail"></div>
-      </section>
-
-      <section class="panel story-panel">
-        <div class="ranking-head"><h2>Why this ski won</h2></div>
-        <p id="whyLead"></p>
-        <div class="compare-mini-grid">
-          <div class="compare-mini"><h4 id="cmp2name">-</h4><p id="cmp2text"></p></div>
-          <div class="compare-mini"><h4 id="cmp3name">-</h4><p id="cmp3text"></p></div>
-        </div>
       </section>
 
       <section class="panel story-panel">
@@ -859,6 +853,13 @@ function breakdownHtml(row, r, logic){
   return html;
 }
 
+// SkiEssentials' one-line summary as an attributed quote; '' when the ski has none.
+function quoteHtml(row){
+  if (!row || !row.summary) return '';
+  const src = row.link ? `<a href="${esc(row.link)}" target="_blank" rel="noopener">SkiEssentials</a>` : 'SkiEssentials';
+  return `<blockquote class="ws-quote">“${esc(row.summary)}”<cite>— ${src}</cite></blockquote>`;
+}
+
 // Short profile of the winning ski, built only from data on the row; missing fields are left out.
 function winnerSummaryHtml(row){
   if (!row) return '';
@@ -866,10 +867,7 @@ function winnerSummaryHtml(row){
   const catMeta = CAT_META[getSkiCategory(row)];
   const head = `${catMeta ? `<span class="ws-cat">${esc(catMeta.label)}</span>` : ''}${row.bestFor ? esc(row.bestFor) : ''}`;
   if (head) parts.push(`<div class="ws-head">${head}</div>`);
-  if (row.summary) {
-    const src = row.link ? `<a href="${esc(row.link)}" target="_blank" rel="noopener">SkiEssentials</a>` : 'SkiEssentials';
-    parts.push(`<blockquote class="ws-quote">“${esc(row.summary)}”<cite>— ${src}</cite></blockquote>`);
-  }
+  if (row.summary) parts.push(quoteHtml(row));
   const hasTesters = !row._custom && row.testerCount;
   const facts = [];
   if (hasTesters && row.base != null && !isNaN(Number(row.base))) {
@@ -962,28 +960,51 @@ function renderBoot(state, scored){
   gid('bootDetail').innerHTML = `<span class="boot-label">${esc(boot.band.label)}</span> · Range ${boot.range} · Mondo ${boot.mondo} · Approx. shell ${boot.shell} — ${esc(boot.reason)}`;
 }
 
-function renderStory(state, scored){
-  if (!scored.top3 || !scored.top3.length) { gid('whyLead').textContent='No skis match the selected length range.'; gid('cmp2name').textContent='-'; gid('cmp2text').textContent=''; gid('cmp3name').textContent='-'; gid('cmp3text').textContent=''; return; }
-  const [one, two, three] = scored.top3;
-  const isDefault = sameState(state, APP.defaults);
-  if (isDefault) {
-    gid('whyLead').textContent = APP.defaultText.winnerWhy;
-    gid('cmp2name').textContent = two ? displaySkiName(two, state) : '-'; gid('cmp2text').textContent = APP.defaultText.compare2;
-    gid('cmp3name').textContent = three ? displaySkiName(three, state) : '-'; gid('cmp3text').textContent = APP.defaultText.compare3;
-    return;
-  }
-  gid('whyLead').textContent = `${displaySkiName(one, state)} finishes on top because the model gives it the best total match for the selected slope, snow, style, skill level, and turn shape.`;
-  gid('cmp2name').textContent = two ? displaySkiName(two, state) : '-';
-  gid('cmp2text').textContent = two ? `Scores ${fmt(two.final)} vs ${fmt(one.final)} for the winner — close, but gives away a little in total balance.` : '';
-  gid('cmp3name').textContent = three ? displaySkiName(three, state) : '-';
-  gid('cmp3text').textContent = three ? `Scores ${fmt(three.final)} — strong, but trails the winner in specific match quality here.` : '';
+// The model's factors for one ranked ski, with labels. null = not calculated (e.g. unknown radius) → skipped.
+function top3Factors(r){
+  const row = r.rowRef || {};
+  return [
+    ['Tester score', row.base], ['Turn shape', r.form], ['Snow', r.snowScore],
+    ['Style', r.styleScore], ['Skill', r.skillScore], ['Slope', r.slopeFit],
+  ].map(([l, v]) => [l, v == null || v === '' || isNaN(Number(v)) ? null : Number(v)]);
+}
+
+// «Why it won»: the two user-choice factors where the winner scores highest, in the user's own words.
+function whyItWonHtml(winner, state){
+  const words = {
+    'Turn shape': `${state.turn} turns`, 'Snow': state.snow, 'Style': `${state.style} style`,
+    'Skill': `${state.skill} level`, 'Slope': `${state.slope} slopes`,
+  };
+  const best = top3Factors(winner)
+    .filter(([l, v]) => words[l] && v != null && !(l === 'Turn shape' && state.snow === 'Powder'))
+    .sort((a, b) => b[1] - a[1]).slice(0, 2)
+    .map(([l, v]) => `${esc(words[l])} (${fmt1(v)})`);
+  return best.length ? `<p class="cc-why"><b>Why it won</b> best fit for ${best.join(' and ')}</p>` : '';
+}
+
+// «Loses on / Better on»: factors where a runner-up differs from the winner by at least 0.3.
+function vsWinnerHtml(runner, winner){
+  const wf = Object.fromEntries(top3Factors(winner));
+  const diffs = top3Factors(runner).filter(([l, v]) => v != null && wf[l] != null).map(([l, v]) => ({ l, v, w: wf[l], d: v - wf[l] }));
+  const fmtList = a => a.map(x => `${x.l} ${fmt1(x.v)} vs ${fmt1(x.w)}`).join(' · ');
+  const loses = diffs.filter(x => x.d <= -0.3).sort((a, b) => a.d - b.d).slice(0, 2);
+  const better = diffs.filter(x => x.d >= 0.3).sort((a, b) => b.d - a.d).slice(0, 2);
+  if (!loses.length && !better.length) return `<p class="cc-line">Very close to the winner on every factor.</p>`;
+  return (loses.length ? `<p class="cc-line"><b>Loses on</b> ${fmtList(loses)}</p>` : '')
+       + (better.length ? `<p class="cc-line"><b>Better on</b> ${fmtList(better)}</p>` : '');
 }
 
 function renderTop3Comments(scored, state){
   const el = gid('top3Comments');
   if (!scored.top3 || !scored.top3.length) { el.innerHTML = '<div class="empty-state">No skis in selected range.</div>'; return; }
   const icons = ['🥇','🥈','🥉'];
-  el.innerHTML = scored.top3.map((it, idx) => `<article class="comment-card"><h4>${icons[idx]} ${esc(displaySkiName(it, state))}</h4>${structuredCommentHtml((it.rowRef&&it.rowRef.comments)||'')}</article>`).join('');
+  const winner = scored.top3[0];
+  el.innerHTML = scored.top3.map((it, idx) => {
+    const row = it.rowRef || {};
+    const gap = idx > 0 ? `<small>−${fmt(winner.final - it.final)}</small>` : '';
+    const explain = idx === 0 ? whyItWonHtml(it, state) : vsWinnerHtml(it, winner);
+    return `<article class="comment-card"><div class="cc-head"><h4>${icons[idx]} ${esc(displaySkiName(it, state))}</h4><span class="cc-score">${fmt(it.final)}${gap}</span></div>${quoteHtml(row)}${explain}${structuredCommentHtml(row.comments || '')}</article>`;
+  }).join('');
 }
 
 // ===== Ranking (single list, one render path for desktop row + mobile stacked detail) =====
@@ -1252,7 +1273,6 @@ function render(){
   renderWinner(state, scored);
   renderRunners(scored, state);
   renderBoot(state, scored);
-  renderStory(state, scored);
   renderTop3Comments(scored, state);
   renderRanking(scored, state);
   renderCompareBar();
