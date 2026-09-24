@@ -291,7 +291,9 @@
     .cmp-cols { display:grid; grid-template-columns:1fr 1fr; gap:var(--s4); margin-bottom:var(--s4); }
     @media (max-width:640px) { .cmp-cols { grid-template-columns:1fr; } }
     .cmp-col-card { background:var(--surface-2); border-radius:var(--r2); padding:var(--s3); }
-    .cmp-radar-shared { display:flex; justify-content:center; margin:var(--s4) 0; }
+    .cmp-radar-head { font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); margin-top:var(--s3); text-align:center; }
+    .cmp-radar-shared { display:flex; justify-content:center; margin:var(--s2) 0; }
+    .cmp-radar-note { font-size:.74rem; color:var(--text-3); text-align:center; margin-bottom:var(--s2); }
     .cmp-spec { display:flex; justify-content:space-between; font-size:.82rem; padding:5px 0; border-bottom:1px solid var(--border); }
     .cmp-spec span { color:var(--text-3); }
 
@@ -796,7 +798,7 @@ function renderScoreArc(svgEl, value){
 
 // ===== Radar with round scale rings (used in the Compare dialog) =====
 // vals: numbers 0-10, or null/undefined when unknown (drawn as 0, labelled with a dash).
-function radarSvg(vals, labels, size = 240){
+function radarSvg(vals, labels, size = 240, color = 'var(--brand)'){
   const N = labels.length, c = size / 2, R = size * 0.36;
   const ang = i => -Math.PI / 2 + (2 * Math.PI / N) * i;
   const pt = (i, f) => [c + f * R * Math.cos(ang(i)), c + f * R * Math.sin(ang(i))];
@@ -807,8 +809,8 @@ function radarSvg(vals, labels, size = 240){
   for (let i = 0; i < N; i++) { const [x, y] = pt(i, 1); g += `<line x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`; }
   [5, 10].forEach(v => { g += `<text x="${c + 4}" y="${(c + R * v / 10 - 3).toFixed(1)}" font-size="10" fill="var(--text-3)" font-family="sans-serif">${v}</text>`; });
   const poly = num.map((v, i) => pt(i, v / 10).map(n => n.toFixed(1)).join(',')).join(' ');
-  g += `<polygon points="${poly}" fill="var(--brand)" fill-opacity=".22" stroke="var(--brand)" stroke-width="2" stroke-linejoin="round"/>`;
-  num.forEach((v, i) => { const [x, y] = pt(i, v / 10); g += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="var(--brand)"/>`; });
+  g += `<polygon points="${poly}" fill="${color}" fill-opacity=".22" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+  num.forEach((v, i) => { const [x, y] = pt(i, v / 10); g += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${color}"/>`; });
   labels.forEach((l, i) => {
     const a = ang(i), cos = Math.cos(a), sin = Math.sin(a);
     const anchor = Math.abs(cos) < 0.3 ? 'middle' : (cos > 0 ? 'start' : 'end');
@@ -1086,10 +1088,15 @@ function openCompareDialog(){
   const sc = scoreAll(getState()); const rmap = {}; (sc.ranking||[]).forEach(x=>rmap[x.ski+'|'+x.length]=x);
   pinned.forEach(p => { if (rmap[p.key]) p.ranked = rmap[p.key]; });
   const AXES = ['Testers','Turn shape','Snow','Style','Skill','Slope'];
+  const TESTER_AXES = ['Edge grip','Stability','Quickness','Forgiveness','Versatility','Playfulness','Floatation'];
   const state = getState();
+  const mixedCats = new Set(pinned.map(p => getSkiCategory(p.row))).size > 1;
   const cols = pinned.map(p => {
     const r = p.ranked || {}; const bias = rowBiasSafe(p.row);
     const rv = [p.row.base, r.form, r.snowScore, r.styleScore, r.skillScore, r.slopeFit];
+    const hasTesters = !p.row._custom && p.row.testerCount;
+    const tv = [p.row.edgeHold, p.row.stabilitySpeed, p.row.quickness, p.row.forgiveness, p.row.versatility, p.row.playfulness, p.row.floatation];
+    const nT = Number(p.row.testerCount);
     const cat = getSkiCategory(p.row); const catM = CAT_META[cat];
     const size = sizeInRange(p.row, state);
     const specLength = Number(p.row.length);
@@ -1101,7 +1108,12 @@ function openCompareDialog(){
       <h3 style="margin:8px 0 2px;font-size:1rem">${ytNameHtml(getBiasKey(p.row.ski), p.row.youtube)} ${infoLink(p.row.link)}</h3>
       <div class="ski-meta">${size} cm · ${radiusText} · ${pMid}mm</div>
       ${imgPlate(p.row.image, getBiasKey(p.row.ski))}
+      <div class="cmp-radar-head">Fit for your conditions</div>
       <div class="cmp-radar-shared">${radarSvg(rv, AXES)}</div>
+      <div class="cmp-radar-head">SkiEssentials tester scores${hasTesters ? ` · ${nT} ${nT === 1 ? 'tester' : 'testers'}` : ''}</div>
+      ${hasTesters
+        ? `<div class="cmp-radar-shared">${radarSvg(tv, TESTER_AXES, 240, 'var(--score)')}</div>${mixedCats ? '<div class="cmp-radar-note">Scores are relative within the ski\'s category.</div>' : ''}`
+        : '<div class="cmp-radar-note">No tester scores for your own ski.</div>'}
       <div class="cmp-spec"><span>Total score</span><strong>${r.final ?? '–'}</strong></div>
       <div class="cmp-spec"><span>Overall score</span><strong>${fmtOrDash(p.row.base)}</strong></div>
       <div class="cmp-spec"><span>Turn shape match</span><strong>${r.form ?? '–'}</strong></div>
